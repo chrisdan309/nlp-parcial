@@ -156,7 +156,7 @@ if __name__ == "__main__":
     vocab = {word: idx for idx, word in enumerate(set(tokens))}
 
     # Creación y entrenamiento del modelo
-    model = Word2Vec(vocab=vocab, embedding_dim=10, window_size=2, negative_samples=5, learning_rate=0.01, epochs=10)
+    model = Word2Vec(vocab=vocab, embedding_dim=10, window_size=2, negative_samples=5, learning_rate=0.01, epochs=5000)
     model.train(tokens)
 
     # Verificar que el embedding sea el mismo
