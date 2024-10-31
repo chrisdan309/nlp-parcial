@@ -3,12 +3,12 @@ import math
 class BrownClustering:
     def __init__(self, tokens):
         self.tokens = tokens
-        self.clusters = {}  # Diccionario para mapear palabras a clusters
-        self.cluster_probs = {}  # Probabilidades P(c)
-        self.transition_probs = {}  # Probabilidades de transición P(c_i, c_j)
-        self.pair_counts = {}  # Contador de bigramas
+        self.clusters = {}
+        self.cluster_probs = {}
+        self.transition_probs = {}
+        self.pair_counts = {}
         self.total_words = len(tokens)
-        self.cluster_counter = 0  # Contador para generar identificadores únicos
+        self.cluster_counter = 0
 
     def initialize_clusters(self):
         unique_tokens = set(self.tokens)
@@ -20,7 +20,6 @@ class BrownClustering:
         print(f"Inicialización: {len(self.clusters)} clusters creados.")
 
     def calculate_probabilities(self):
-        # Calcula las probabilidades iniciales y de transición
         for i in range(len(self.tokens) - 1):
             c_i = self.clusters[self.tokens[i]]
             c_j = self.clusters[self.tokens[i + 1]]
@@ -37,7 +36,6 @@ class BrownClustering:
         print("Probabilidades de transición calculadas.")
 
     def mutual_information_reduction(self, cluster1, cluster2):
-        # Cálculo de la reducción de información mutua
         p_c1 = self.cluster_probs.get(cluster1, 0)
         p_c2 = self.cluster_probs.get(cluster2, 0)
         p_combined = self.transition_probs.get((cluster1, cluster2), 0)
@@ -66,15 +64,12 @@ class BrownClustering:
         self.cluster_counter += 1
         new_prob = self.cluster_probs.get(cluster1, 0) + self.cluster_probs.get(cluster2, 0)
 
-        # Actualizar el mapeo de clusters
         for word in self.clusters:
             if self.clusters[word] == cluster1 or self.clusters[word] == cluster2:
                 self.clusters[word] = new_cluster
 
-        # Actualizar la probabilidad del nuevo cluster
         self.cluster_probs[new_cluster] = new_prob
 
-        # Eliminar las probabilidades de los clusters antiguos si existen
         if cluster1 in self.cluster_probs:
             del self.cluster_probs[cluster1]
         if cluster2 in self.cluster_probs:

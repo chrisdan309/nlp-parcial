@@ -8,6 +8,7 @@ class bigram():
     vocab = None
     bigram_count = {}
     unigram_count = {}
+    
     def __init__(self, corpus:list, vocab):
         self.corpus = corpus
         self.vocab = vocab

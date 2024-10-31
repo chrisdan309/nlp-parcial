@@ -10,7 +10,6 @@ class GloVe:
         self.x_max = x_max
         self.learning_rate = learning_rate
         
-        # Matrices e inicialización
         self.co_occurrence_matrix = [[0] * vocab_size for _ in range(vocab_size)]
         self.word_vectors = [[random.random() for _ in range(vector_dim)] for _ in range(vocab_size)]
         self.biases = [random.random() for _ in range(vocab_size)]
@@ -64,10 +63,8 @@ class GloVe:
                         weight = self.weight_function(x_ij)
                         prediction = self.dot_product(self.word_vectors[i], self.word_vectors[j]) + self.biases[i] + self.biases[j]
                         
-                        # Calcular el error
                         error = prediction - math.log(x_ij)
                         
-                        # Gradientes para vectores y sesgos
                         for k in range(self.vector_dim):
                             grad = weight * error * self.word_vectors[j][k]
                             self.word_vectors[i][k] -= self.learning_rate * grad
@@ -80,29 +77,3 @@ class GloVe:
         with open(file_path, 'w') as f:
             for i in range(self.vocab_size):
                 f.write(f"{self.index_to_word[i]} {' '.join(map(str, self.word_vectors[i]))}\n")
-
-
-def preprocess_by_batches(corpus):
-    # Esta función simula la preprocesación del corpus y debe ser reemplazada
-    return ["el", "hombre", "en", "el", "parque", "vio", "otro", "hombre"]
-
-
-if __name__ == "__main__":
-
-# Ejemplo de uso
-
-    # Preprocesar el corpus
-    your_corpus = ["El hombre en el parque vio otro hombre."]
-    tokens = preprocess_by_batches(your_corpus)
-
-    # Crear una instancia de GloVe
-    vector_dim = 50
-    glove = GloVe(len(set(tokens)), vector_dim)
-
-    # Entrenar el modelo
-    window_size = 2
-    epochs = 1000
-    glove.train(tokens, window_size, epochs)
-
-    # Guardar los embeddings
-    glove.save_embeddings("glove_embeddings.txt")

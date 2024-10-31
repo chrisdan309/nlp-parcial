@@ -48,6 +48,7 @@ class TextProcessor:
         tokens = self.filter_tokens(tokens, min_frequency)
         return tokens
     
+    
     def preprocess_by_batches(self, batch_size, top, min_frequency=5):
         token_counts = {}
         ordered_tokens = []
@@ -62,10 +63,8 @@ class TextProcessor:
                     tokens = self.lematizacion(tokens)
                     tokens = self.remove_stopwords(tokens)
                     
-                    # Añadir los tokens a la lista de tokens ordenados
                     ordered_tokens.extend(tokens)
 
-                    # Contar la frecuencia de cada token
                     for token in tokens:
                         token_counts[token] = token_counts.get(token, 0) + 1
 
@@ -76,23 +75,19 @@ class TextProcessor:
                 if cont >= batch_size * top:
                     break
 
-            # Procesar el último lote si quedó alguno
             if batch:
                 tokens = self.tokenize(batch)
                 tokens = self.lematizacion(tokens)
                 tokens = self.remove_stopwords(tokens)
 
-                # Añadir los tokens a la lista de tokens ordenados
                 ordered_tokens.extend(tokens)
 
-                # Contar la frecuencia de cada token
                 for token in tokens:
                     token_counts[token] = token_counts.get(token, 0) + 1
 
                 cont += len(batch)
                 print(f"proceso: {cont} lineas")
 
-        # Filtrar los tokens según su frecuencia, manteniendo el orden original
         filtered_tokens = [token for token in ordered_tokens if token_counts.get(token, 0) > min_frequency]
         
         return filtered_tokens

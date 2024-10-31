@@ -82,18 +82,14 @@ class bigram():
         print("Conteos ajustados (c^*):", self.adjusted_counts)
 
     def calculate_probability_adjusted(self, word):
-        # Sumar todos los conteos ajustados para normalizar
         total_adjusted_count = sum(self.adjusted_counts.values())
-        # Calcular la probabilidad ajustada de una palabra
         if word in self.adjusted_counts:
             return self.adjusted_counts[word] / total_adjusted_count
         else:
             return self.adjusted_counts['<UNK>'] / total_adjusted_count
         
     def calculate_mle_probability(self):
-        # Calcular la suma total de los conteos de unigramas
         total_count = sum(self.unigram_count.values())
-        # Calcular y mostrar la probabilidad de cada unigram
         mle_probabilities = {}
         for word, count in self.unigram_count.items():
             if count == 3:
@@ -102,10 +98,8 @@ class bigram():
         return mle_probabilities
     
     def normalize_probabilities(self):
-        # Calcular la suma total de los conteos ajustados
         total_adjusted_count = sum(self.adjusted_counts.values())
         print(f"Suma de probabilidades sin ajustar: {total_adjusted_count:.6f}")
-        # Normalizar cada probabilidad ajustada
         normalized_probabilities = {}
         for word, adjusted_count in self.adjusted_counts.items():
             normalized_probabilities[word] = adjusted_count / total_adjusted_count
@@ -131,6 +125,10 @@ if __name__ == "__main__":
     
     print("\nGood-Turing")
     bigrama.good_turing()
+
+    print("\nMLE")
+    bigrama.calculate_mle_probability()
+
     for word in vocab:
         probability = bigrama.calculate_probability_adjusted(word)
         print(f"P({word}) = {probability:.6f}")

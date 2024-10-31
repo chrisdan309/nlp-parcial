@@ -3,7 +3,8 @@ from BrownClustering import BrownClustering
 from Word2Vec import Word2Vec
 from Glove import GloVe
 if __name__ == "__main__":
-    corpus_path = './corpus/eswiki-latest-pages-articles.txt'
+    # corpus_path = './corpus/eswiki-latest-pages-articles.txt'
+    corpus_path = './corpus/Quijote.txt'
     processor = TextProcessor(corpus_path)
 
     tokens = processor.preprocess_by_batches(batch_size=5000, min_frequency=5, top=1)
@@ -19,26 +20,26 @@ if __name__ == "__main__":
     # embedding = model.get_embedding(tokens[4])
     # print(f"Embedding de la palabra '{tokens[4]}': {embedding}")
 
-    # Glove
-    # Crear una instancia de GloVe
-    vector_dim = 50
-    glove = GloVe(len(set(tokens)), vector_dim)
+    # # Glove
+    # # Crear una instancia de GloVe
+    # vector_dim = 50
+    # glove = GloVe(len(set(tokens)), vector_dim)
 
-    # Entrenar el modelo
-    window_size = 2
-    epochs = 10
-    print("Training")
-    glove.train(tokens, window_size, epochs)
+    # # Entrenar el modelo
+    # window_size = 2
+    # epochs = 10
+    # print("Training")
+    # glove.train(tokens, window_size, epochs)
 
-    # Guardar los embeddings
-    glove.save_embeddings("glove_embeddings.txt")
+    # # Guardar los embeddings
+    # glove.save_embeddings("glove_embeddings.txt")
 
 
-    # # print(tokens_by_batches[:100])
-    # brown_clustering = BrownClustering(tokens_by_batches)
-    # print(len(tokens_by_batches)) # 5126
+    # print(tokens_by_batches[:100])
+    brown_clustering = BrownClustering(tokens)
+    print(len(tokens)) # 160992
     # brown_clustering.initialize_clusters()
-    # # print(brown_clustering.clusters)
-    # clusters = brown_clustering.fit(target_clusters=50)
-    # print(f"Clusters obtenidos: {clusters}")
+    # print(brown_clustering.clusters)
+    clusters = brown_clustering.fit(target_clusters=100)
+    print(f"Clusters obtenidos: {clusters}")
 
