@@ -310,12 +310,9 @@ if __name__ == "__main__":
     processor = TextProcessor(corpus_path)
 
     tokens = processor.preprocess_by_batches(batch_size=5000, min_frequency=5, top=1)
-
-
 ```
 
-
-(iamgen)
+![alt text](images/image0.png)
 
 
 Continuamos con el Brown Clustering
@@ -323,6 +320,7 @@ Continuamos con el Brown Clustering
 Hacemos uso de esta técnica para agrupar palabras basándonos en el contexto
 
 Realizamos la inicialización de los clusters por palabra
+
 ```py
 class BrownClustering:
     def __init__(self, tokens):
@@ -442,13 +440,290 @@ Podemos visualizar los tokens y su cluster
 ![alt text](images/image10.png)
 
 Tendrían la siguiente estructura
-```json
+
+``` json
 {'fuent': 'cluster_10151', 'plano': 'cluster_9769', 'atrá': 'cluster_9889', 'utilizado': 'cluster_10151', 'hallado': 'cluster_9989', 'aproxim': 'cluster_9640', 'jehová': 'cluster_9780', 'varía': 'cluster_10096', 'carta': 'cluster_10049', 'institución': 'cluster_10120', 'rocosa': 'cluster_9981', 'mortal': 'cluster_9981', 'icono': 'cluster_10135', 'pe': 'cluster_9837', 'clara': 'cluster_9889', 'participado': 'cluster_6972', 'marte': 'cluster_10096', 'goza': 'cluster_9780', 'vall': 'cluster_9989', 'cilíndr': 'cluster_10030', 'coalición': 'cluster_10037', 'experiencia': 'cluster_10045', 'precipit': 'cluster_9439', 'restrict': 'cluster_9681', 'conclusión': 'cluster_10042', 'comenzado': 'cluster_10135', 'movil': 'cluster_9407', 'cien': 'cluster_10135', 'parque': 'cluster_10049', 'asteraceae': 'cluster_10086', 'violeta': 'cluster_10099', 'sentido': 'cluster_10096', 'aceite': 'cluster_9953', 'viajar': 'cluster_10096'}
 ```
 
 Teniendo como key el token y como value el cluster
 
-Ahora se implementará el word2vec
+Ahora se implementará el LSA
 
+```py
+class LSA:
+    def __init__(self, documents, k, max_iterations=100, tolerance=1e-6):
+        self.documents = documents
+        self.k = k
+        self.max_iterations = max_iterations
+        self.tolerance = tolerance
+        self.terms = []
+        self.X = []
+        self.U = []
+        self.Sigma = []
+        self.Vt = []
+```
 
+Creamos el constructor del LSA el cual tendrá los parámetros para recibir la lista de documentos (`docuemnts`), el número de dimensiones a conservar (`k`), los parámetros para el método de potencia (max_iteracions y tolerance), almacenamos los términos únicos (`terms`) y la matriz término (X), con su reducción de dimensionalidad (X_k) documento con las matrices de la descomposición SVD (U, Sigma, Vt)
 
+Construimos la matriz término documento
+
+```py
+def build_term_document_matrix(self):
+        terms = {}
+        for document in self.documents:
+            for word in document.split():
+                if word not in terms:
+                    terms[word] = len(terms)
+
+        X = [[0] * len(terms) for _ in range(len(self.documents))]
+        for i, document in enumerate(self.documents):
+            for word in document.split():
+                X[i][terms[word]] += 1
+
+        for j in range(len(terms)):
+            df = sum(1 for i in range(len(self.documents)) if X[i][j] > 0)
+            idf = math.log(len(self.documents) / (df + 1))
+            for i in range(len(self.documents)):
+                tf = X[i][j] / (sum(X[i]) + 1)
+                X[i][j] = tf * idf
+
+        self.X = X
+        self.terms = list(terms.keys())
+```
+
+Para la construcción de la matriz término documento, primero construimos el vocabulario con los términos únicos, luego llenamosla matriz con la frecuencia de términos en los documentos y finalmente hacemos uso del tf-idf.
+
+Ahora implementamos el cálculo de las matrices de SVD utilizando el método de potencia
+
+```py
+    def power_method(self, matrix):
+        m, n = len(matrix), len(matrix[0])
+        b_k = [random.random() for _ in range(n)]
+        
+        norm_b_k = math.sqrt(sum(x**2 for x in b_k))
+        b_k = [x / norm_b_k for x in b_k]
+        
+        for _ in range(self.max_iterations):
+            b_k1 = [sum(matrix[i][j] * b_k[j] for j in range(n)) for i in range(m)]
+            b_k1 = [sum(matrix[j][i] * b_k1[j] for j in range(m)) for i in range(n)]
+            
+            norm_b_k1 = math.sqrt(sum(x**2 for x in b_k1))
+            b_k1 = [x / norm_b_k1 for x in b_k1]
+
+            if all(abs(b_k[i] - b_k1[i]) < self.tolerance for i in range(n)):
+                return norm_b_k1, b_k1
+            
+            b_k = b_k1
+        return norm_b_k1, b_k1
+
+    def approximate_svd(self):
+        A = [row[:] for row in self.X]
+        U, Sigma, Vt = [], [], []
+
+        for _ in range(self.k):
+            singular_value, v = self.power_method(A)
+            u = [sum(A[i][j] * v[j] for j in range(len(v))) / singular_value for i in range(len(A))]
+
+            U.append(u)
+            Sigma.append(singular_value)
+            Vt.append(v)
+
+            for i in range(len(A)):
+                for j in range(len(A[0])):
+                    A[i][j] -= singular_value * u[i] * v[j]
+
+        self.U = [list(col) for col in zip(*U)]
+        self.Sigma = [[Sigma[i] if i == j else 0 for j in range(self.k)] for i in range(self.k)]
+        self.Vt = Vt
+```
+
+Creamos un vector aleatorio inicial y lo normalizamos (b_k). Continuamos con el método iterativo para el cálculo de los autovectores dominantes, finalmente se retorna el vector y valor propio dominante.
+
+Luego en el cálculo del SVD usamos el método de potencia solo hasta la dimensión k y hacemos el llenado de las matrices de descomposición.
+
+Luego a la copia de la matriz X (A), le restamos el valor singular para asegurar que el método de potencia calcule el siguiente autovalor.
+
+```py
+def reduce_dimensionality(self):
+    self.X_k = []
+
+    for i in range(len(self.U)):
+        row = []
+        for j in range(len(self.Vt[0])):
+            value = 0
+            for p in range(self.k):
+                value += self.U[i][p] * self.Sigma[p][p] * self.Vt[p][j]                
+            row.append(value)
+        self.X_k.append(row)
+```
+
+Realizamos la reducción de dimensionalidad iterando sobre los términos de las filas de U y cada documento de las columnas de Vt, calculamos la proyección múltiplicamos el valor de U y el valor singular de Sigma y el valor de Vt y lo almacenamos en un X_k
+
+Continuamos con la implementación de Word2Vec
+
+```py
+class Word2Vec:
+    def __init__(self, vocab, embedding_dim=100, window_size=2, negative_samples=5, learning_rate=0.01, epochs=10, sg=1):
+        self.vocab = vocab
+        self.vocab_size = len(vocab)
+        self.embedding_dim = embedding_dim
+        self.window_size = window_size
+        self.negative_samples = negative_samples
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+        self.sg = sg
+        self.W_in, self.W_out = self.initialize_vectors()
+
+```
+
+Luego del procesamiento realizamos el CBOW:
+
+```py
+def get_context(self, tokens, idx):
+    start = max(0, idx - self.window_size)
+    end = min(len(tokens), idx + self.window_size + 1)
+    return [tokens[i] for i in range(start, end) if i != idx]
+```
+
+Calculamos el contexto tomando el window_size, obteniendo los tokens cercanos y retornándolos en una lista.
+
+Implementamos la función pérdida negativa logarítmica
+
+![alt text](images/image11.png)
+
+Con la siguiente función:
+
+```py
+def cbow_loss(self, context_words, target_idx):
+    context_vector = [0] * self.embedding_dim
+    for context_word_idx in context_words:
+        context_vector = self.vector_add(context_vector, self.W_in[context_word_idx])
+    context_vector = self.scalar_multiply(context_vector, 1 / len(context_words))
+
+    target_dot_product = self.dot_product(self.W_out[target_idx], context_vector)
+    numerator = math.exp(target_dot_product)
+
+    denominator = sum(math.exp(self.dot_product(self.W_out[i], context_vector)) for i in range(self.vocab_size))
+
+    probability = numerator / denominator
+
+    loss = -math.log(probability)
+
+    gradient = 1 - probability
+
+    return loss, gradient, context_vector
+```
+
+Luego implementamos el proceso de training con el step utilizando el descenso de gradiente básico
+
+```py
+def cbow_step(self, context_words, target_idx):
+    loss, gradient, context_vector = self.cbow_loss(context_words, target_idx)
+
+    self.W_out[target_idx] = self.vector_add(self.W_out[target_idx], 
+                                            self.scalar_multiply(context_vector, self.learning_rate * gradient))
+
+    for context_word_idx in context_words:
+        self.W_in[context_word_idx] = self.vector_add(self.W_in[context_word_idx], 
+                                                    self.scalar_multiply(self.W_out[target_idx], self.learning_rate * gradient))
+    return loss
+```
+
+Ahora la implementación del skip-grama
+
+Primero su función de pérdida que está presenta la implementación
+
+```py
+def skipgram_loss(self, target_vector, context_vector, label):
+    dot_product = self.dot_product(target_vector, context_vector)
+    prediction = self.sigmoid(dot_product)
+    loss = -math.log(prediction) if label == 1 else -math.log(1 - prediction)
+    gradient = prediction - label
+    
+    return loss, gradient
+```
+
+Paso del skipgrama
+
+```py
+def skipgram_step(self, target_idx, context_word_idx):
+    pos_loss, pos_gradient = self.skipgram_loss(self.W_in[target_idx], self.W_out[context_word_idx], 1)
+    self.W_in[target_idx] = self.vector_add(self.W_in[target_idx], 
+                                                self.scalar_multiply(self.W_out[context_word_idx], -self.learning_rate * pos_gradient))
+    self.W_out[context_word_idx] = self.vector_add(self.W_out[context_word_idx], 
+                                                    self.scalar_multiply(self.W_in[target_idx], -self.learning_rate * pos_gradient))
+    neg_samples = self.negative_sampling(target_idx)
+    neg_loss = 0
+    for neg_word_idx in neg_samples:
+        neg_loss_sample, neg_gradient = self.skipgram_loss(self.W_in[target_idx], self.W_out[neg_word_idx], 0)
+        neg_loss += neg_loss_sample
+
+        self.W_in[target_idx] = self.vector_add(self.W_in[target_idx], 
+                                                    self.scalar_multiply(self.W_out[neg_word_idx], -self.learning_rate * neg_gradient))
+        self.W_out[neg_word_idx] = self.vector_add(self.W_out[neg_word_idx], 
+                                                    self.scalar_multiply(self.W_in[target_idx], -self.learning_rate * neg_gradient))
+    return pos_loss + neg_loss
+```
+
+Ahora la implementación del GloVe
+
+Construimos la matriz de coocurrencia
+
+```py
+def build_co_occurrence_matrix(self, tokens, window_size):
+    for i, word in enumerate(tokens):
+        if word in self.word_to_index:
+            current_word_index = self.word_to_index[word]
+            for j in range(max(0, i - window_size), min(len(tokens), i + window_size + 1)):
+                if j != i and tokens[j] in self.word_to_index:
+                    context_word_index = self.word_to_index[tokens[j]]
+                    self.co_occurrence_matrix[current_word_index][context_word_index] += 1
+```
+
+Definimos la función de costos y el cálculo de los pesos
+
+```py
+def cost_function(self):
+    J = 0
+    for i in range(self.vocab_size):
+        for j in range(self.vocab_size):
+            if self.co_occurrence_matrix[i][j] > 0:
+                x_ij = self.co_occurrence_matrix[i][j]
+                weight = self.weight_function(x_ij)
+                prediction = self.dot_product(self.word_vectors[i], self.word_vectors[j]) + self.biases[i] + self.biases[j]
+                J += weight * (prediction - math.log(x_ij)) ** 2
+    return J
+
+def weight_function(self, x_ij):
+    if x_ij < self.x_max:
+        return (x_ij / self.x_max) ** self.alpha
+    else:
+        return 1
+```
+
+Y actualizamos los sezgos
+
+```py
+def train(self, tokens, window_size, epochs):
+    self.build_vocab(tokens)
+    self.build_co_occurrence_matrix(tokens, window_size)
+    
+    for epoch in range(epochs):
+        print(f"Epoch: {epoch}")
+        for i in range(self.vocab_size):
+            for j in range(self.vocab_size):
+                if self.co_occurrence_matrix[i][j] > 0:
+                    x_ij = self.co_occurrence_matrix[i][j]
+                    weight = self.weight_function(x_ij)
+                    prediction = self.dot_product(self.word_vectors[i], self.word_vectors[j]) + self.biases[i] + self.biases[j]
+                    
+                    error = prediction - math.log(x_ij)
+                    
+                    for k in range(self.vector_dim):
+                        grad = weight * error * self.word_vectors[j][k]
+                        self.word_vectors[i][k] -= self.learning_rate * grad
+                        
+                    # Actualizar sesgos
+                    self.biases[i] -= self.learning_rate * weight * error
+                    self.biases[j] -= self.learning_rate * weight * error
+```
