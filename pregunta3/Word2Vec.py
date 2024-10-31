@@ -102,10 +102,9 @@ class Word2Vec:
                                                      self.scalar_multiply(self.W_out[neg_word_idx], -self.learning_rate * neg_gradient))
             self.W_out[neg_word_idx] = self.vector_add(self.W_out[neg_word_idx], 
                                                         self.scalar_multiply(self.W_in[target_idx], -self.learning_rate * neg_gradient))
-
         return pos_loss + neg_loss
 
-    def _cbow_step(self, context_words, target_idx):
+    def cbow_step(self, context_words, target_idx):
         loss, gradient, context_vector = self.cbow_loss(context_words, target_idx)
 
         self.W_out[target_idx] = self.vector_add(self.W_out[target_idx], 
