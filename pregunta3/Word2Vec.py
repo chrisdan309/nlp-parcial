@@ -43,7 +43,7 @@ class Word2Vec:
                 negative_samples.append(sample)
         return negative_samples
 
-    def _cbow_loss(self, context_words, target_idx):
+    def cbow_loss(self, context_words, target_idx):
         context_vector = [0] * self.embedding_dim
         for context_word_idx in context_words:
             context_vector = self.vector_add(context_vector, self.W_in[context_word_idx])
@@ -106,7 +106,7 @@ class Word2Vec:
         return pos_loss + neg_loss
 
     def _cbow_step(self, context_words, target_idx):
-        loss, gradient, context_vector = self._cbow_loss(context_words, target_idx)
+        loss, gradient, context_vector = self.cbow_loss(context_words, target_idx)
 
         self.W_out[target_idx] = self.vector_add(self.W_out[target_idx], 
                                                 self.scalar_multiply(context_vector, self.learning_rate * gradient))

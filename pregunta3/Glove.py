@@ -56,6 +56,7 @@ class GloVe:
         self.build_co_occurrence_matrix(tokens, window_size)
         
         for epoch in range(epochs):
+            print(f"Epoch: {epoch}")
             for i in range(self.vocab_size):
                 for j in range(self.vocab_size):
                     if self.co_occurrence_matrix[i][j] > 0:

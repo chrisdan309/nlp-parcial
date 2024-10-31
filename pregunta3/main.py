@@ -6,11 +6,14 @@ if __name__ == "__main__":
     # corpus_path = './corpus/eswiki-latest-pages-articles.txt'
     corpus_path = './corpus/Quijote.txt'
     processor = TextProcessor(corpus_path)
-
+    print("Tokens (primeros 20):")
     tokens = processor.preprocess_by_batches(batch_size=5000, min_frequency=5, top=1)
+    print(tokens[:20])
 
-    vocab = {word: idx for idx, word in enumerate(set(tokens))}
 
+    vocab = {word: idx for idx, word in enumerate(set(tokens[:20]))}
+    print("Vocab:")
+    print(vocab)
     # # Word2Vec
     # # Creación y entrenamiento del modelo
     # model = Word2Vec(vocab=vocab, embedding_dim=10, window_size=2, negative_samples=5, learning_rate=0.01, epochs=10)
@@ -35,11 +38,11 @@ if __name__ == "__main__":
     # glove.save_embeddings("glove_embeddings.txt")
 
 
-    # print(tokens_by_batches[:100])
-    brown_clustering = BrownClustering(tokens)
-    print(len(tokens)) # 160992
-    # brown_clustering.initialize_clusters()
-    # print(brown_clustering.clusters)
-    clusters = brown_clustering.fit(target_clusters=100)
-    print(f"Clusters obtenidos: {clusters}")
+    # # print(tokens_by_batches[:100])
+    # brown_clustering = BrownClustering(tokens)
+    # print(len(tokens)) # 160992
+    # # brown_clustering.initialize_clusters()
+    # # print(brown_clustering.clusters)
+    # clusters = brown_clustering.fit(target_clusters=100)
+    # print(f"Clusters obtenidos: {clusters}")
 
